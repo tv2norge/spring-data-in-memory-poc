@@ -1,16 +1,12 @@
 package org.springframework.data.inmemory.repository.support;
 
-import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import org.springframework.data.inmemory.DataStore;
 import org.springframework.data.inmemory.IdEntityPair;
 import org.springframework.data.inmemory.repository.SimpleInMemoryRepository;
+import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.NamedQueries;
+import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.ReflectionEntityInformation;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
@@ -27,6 +23,12 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 public class InMemoryRepositoryFactory<T, ID extends Serializable> extends RepositoryFactorySupport {
 
 	private final DataStore<T, ID> dataStore;
@@ -41,9 +43,9 @@ public class InMemoryRepositoryFactory<T, ID extends Serializable> extends Repos
 	}
 
 	@Override
-	protected Object getTargetRepository(RepositoryMetadata metadata) {
+	protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
 
-		EntityInformation<T, ID> ei = this.<T, ID> getEntityInformation((Class<T>) metadata.getDomainType());
+		EntityInformation<T, ID> ei = this.<T, ID> getEntityInformation((Class<T>) repositoryInformation.getDomainType());
 		return new SimpleInMemoryRepository<T, ID>(dataStore, ei);
 	}
 
@@ -79,9 +81,10 @@ public class InMemoryRepositoryFactory<T, ID extends Serializable> extends Repos
 		 * (non-Javadoc)
 		 * @see org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(java.lang.reflect.Method, org.springframework.data.repository.core.RepositoryMetadata, org.springframework.data.repository.core.NamedQueries)
 		 */
-		public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, NamedQueries namedQueries) {
+		@Override
+		public RepositoryQuery resolveQuery(Method method, RepositoryMetadata repositoryMetadata, ProjectionFactory projectionFactory, NamedQueries namedQueries) {
 
-			QueryMethod queryMethod = new QueryMethod(method, metadata);
+			QueryMethod queryMethod = new QueryMethod(method, repositoryMetadata, projectionFactory);
 			return new InMemoryPartTreeQuery<T, ID>(queryMethod, evaluationContextProvider, dataStore);
 		}
 	}
